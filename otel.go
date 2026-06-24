@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
@@ -24,9 +24,12 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
-// Pra que serve??
-func newTracerProvider() (*trace.TracerProvider, error) {
-	traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+func newTracerProvider(ctx context.Context) (*trace.TracerProvider, error) {
+	traceExporter, err := otlptracehttp.New(
+		ctx,
+		otlptracehttp.WithEndpoint("localhost:4318"),
+		otlptracehttp.WithInsecure(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +106,7 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	otel.SetTextMapPropagator(prop)
 
 	// Set up trace provider
-	tracerProvider, err := newTracerProvider()
+	tracerProvider, err := newTracerProvider(ctx)
 	if err != nil {
 		handleErr(err)
 		return shutdown, err
