@@ -1,0 +1,26 @@
+otelcol.receiver.otlp {
+    grpc {}
+    http {}
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls {
+      insecure = true
+    }
+  }
+}
+
+otelcol.exporter.prometheus "metrics" {
+  foward_to = []
+}
+
+otelcol.service "default" {
+  pipelines {
+    traces {
+      receivers = [otelcol.receiver.otlp.default]
+      exporters = [otelcol.exporter.otlp.tempo]
+    }
+  }
+}
