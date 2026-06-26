@@ -1,26 +1,65 @@
-otelcol.receiver.otlp {
+// OpenTelemetry Receiver
+// ---------------------------------------------------------------- //
+otelcol.receiver.otlp "default" {
     grpc {}
-    http {}
-}
 
+    output {
+      traces = [otelcol.processor.batch.default.input]
+      metrics = [otelcol.processor.batch.default.input]
+      logs = [otelcol.processor.batch.default.input]
+    }
+}
+// ---------------------------------------------------------------- //
+
+// OpenTelemetry Processor
+// ---------------------------------------------------------------- //
+otelcol.processor.batch "default" {
+  output {
+    traces = [otelcol.exporter.otlp.tempo.input]
+    metrics = [otelcol.exporter.prometheus.default.input]
+    logs = [otelcol.exporter.loki.default.input]
+  }
+}
+// ---------------------------------------------------------------- //
+
+// Trace exporter setup
+// ---------------------------------------------------------------- //
 otelcol.exporter.otlp "tempo" {
   client {
     endpoint = "tempo:4317"
+
     tls {
       insecure = true
     }
   }
 }
+// ---------------------------------------------------------------- //
 
-otelcol.exporter.prometheus "metrics" {
-  foward_to = []
+// Metrics exporter setup
+//
+// Removendo o remote write porque precisa adicionar essa config no prometheus
+// ---------------------------------------------------------------- //
+otelcol.exporter.prometheus "default" {
+  forward_to = [
+    prometheus.remote_write.default.receiver,
+  ]
 }
 
-otelcol.service "default" {
-  pipelines {
-    traces {
-      receivers = [otelcol.receiver.otlp.default]
-      exporters = [otelcol.exporter.otlp.tempo]
-    }
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+// ---------------------------------------------------------------- //
+
+otelcol.exporter.loki "default" {
+  forward_to = [
+    loki.write.default.receiver,
+  ]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
   }
 }
