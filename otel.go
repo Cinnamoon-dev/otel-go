@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
@@ -45,8 +45,12 @@ func newTracerProvider(ctx context.Context) (*trace.TracerProvider, error) {
 }
 
 // Pra que serve??
-func newMeterProvider() (*metric.MeterProvider, error) {
-	metricExporter, err := stdoutmetric.New(stdoutmetric.WithPrettyPrint())
+func newMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
+	metricExporter, err := otlpmetricgrpc.New(
+		ctx,
+		otlpmetricgrpc.WithEndpoint("localhost:4317"),
+		otlpmetricgrpc.WithInsecure(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +59,7 @@ func newMeterProvider() (*metric.MeterProvider, error) {
 		metric.WithReader(
 			metric.NewPeriodicReader(
 				metricExporter,
-				metric.WithInterval(3*time.Second), // Default is 1 min. Set to 3s for demonstrative purposes
+				metric.WithInterval(5*time.Second), // Default is 1 min. Set to 5s for demonstrative purposes
 			),
 		),
 	)
@@ -64,8 +68,12 @@ func newMeterProvider() (*metric.MeterProvider, error) {
 }
 
 // Pra que serve??
-func newLoggerProvider() (*log.LoggerProvider, error) {
-	logExporter, err := stdoutlog.New(stdoutlog.WithPrettyPrint())
+func newLoggerProvider(ctx context.Context) (*log.LoggerProvider, error) {
+	logExporter, err := otlploggrpc.New(
+		ctx,
+		otlploggrpc.WithEndpoint("localhost:4317"),
+		otlploggrpc.WithInsecure(),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +124,7 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	otel.SetTracerProvider(tracerProvider)
 
 	// Set up meter provider
-	meterProvider, err := newMeterProvider()
+	meterProvider, err := newMeterProvider(ctx)
 	if err != nil {
 		handleErr(err)
 		return shutdown, err
@@ -126,7 +134,7 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	otel.SetMeterProvider(meterProvider)
 
 	// Set up logger provider
-	loggerProvider, err := newLoggerProvider()
+	loggerProvider, err := newLoggerProvider(ctx)
 	if err != nil {
 		handleErr(err)
 		return shutdown, err
