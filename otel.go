@@ -13,7 +13,13 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+)
+
+const (
+	serviceName = "dice-service"
 )
 
 // Pra que serve??
@@ -34,11 +40,22 @@ func newTracerProvider(ctx context.Context) (*trace.TracerProvider, error) {
 		return nil, err
 	}
 
+	res, err := resource.New(
+		ctx,
+		resource.WithAttributes(
+			semconv.ServiceName(serviceName),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithBatcher(
 			traceExporter,
 			trace.WithBatchTimeout(time.Second), // Default is 5s. Set to 1s for demonstrative purposes
 		),
+		trace.WithResource(res),
 	)
 
 	return tracerProvider, nil
@@ -55,6 +72,16 @@ func newMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
 		return nil, err
 	}
 
+	res, err := resource.New(
+		ctx,
+		resource.WithAttributes(
+			semconv.ServiceName(serviceName),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	meterProvider := metric.NewMeterProvider(
 		metric.WithReader(
 			metric.NewPeriodicReader(
@@ -62,6 +89,7 @@ func newMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
 				metric.WithInterval(5*time.Second), // Default is 1 min. Set to 5s for demonstrative purposes
 			),
 		),
+		metric.WithResource(res),
 	)
 
 	return meterProvider, nil
