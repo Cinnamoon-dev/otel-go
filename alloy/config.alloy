@@ -5,7 +5,6 @@ otelcol.receiver.otlp "default" {
 
     output {
       traces = [otelcol.processor.batch.default.input]
-      metrics = [otelcol.processor.batch.default.input]
       logs = [otelcol.processor.batch.default.input]
     }
 }
@@ -16,7 +15,6 @@ otelcol.receiver.otlp "default" {
 otelcol.processor.batch "default" {
   output {
     traces = [otelcol.exporter.otlp.tempo.input]
-    metrics = [otelcol.exporter.prometheus.default.input]
     logs = [otelcol.exporter.loki.default.input]
   }
 }
@@ -31,23 +29,6 @@ otelcol.exporter.otlp "tempo" {
     tls {
       insecure = true
     }
-  }
-}
-// ---------------------------------------------------------------- //
-
-// Metrics exporter setup
-//
-// Removendo o remote write porque precisa adicionar essa config no prometheus
-// ---------------------------------------------------------------- //
-otelcol.exporter.prometheus "default" {
-  forward_to = [
-    prometheus.remote_write.default.receiver,
-  ]
-}
-
-prometheus.remote_write "default" {
-  endpoint {
-    url = "http://prometheus:9090/api/v1/write"
   }
 }
 // ---------------------------------------------------------------- //
