@@ -11,32 +11,46 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const name = "go.opentelemetry.io/contrib/examples/dice"
 
 var (
-	tracer  = otel.Tracer(name)
-	meter   = otel.Meter(name)
-	logger  = otelslog.NewLogger(name)
-	rollCnt metric.Int64Counter
+	logger = otelslog.NewLogger(name)
 )
 
-func init() {
-	var err error
-	rollCnt, err = meter.Int64Counter(
+type Telemetry struct {
+	Tracer  trace.Tracer
+	Meter   metric.Meter
+	RollCnt metric.Int64Counter
+}
+
+func NewTelemetry() (*Telemetry, error) {
+	meter := otel.Meter(name)
+	rollCnt, err := meter.Int64Counter(
 		"dice.rolls",
 		metric.WithDescription("The number of rolls by roll value"),
 		metric.WithUnit("{roll}"),
 	)
-
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
+	return &Telemetry{
+		Tracer:  otel.Tracer(name),
+		Meter:   meter,
+		RollCnt: rollCnt,
+	}, nil
 }
 
 func rolldice(w http.ResponseWriter, r *http.Request) {
-	ctx, span := tracer.Start(r.Context(), "roll")
+	telemetry, err := NewTelemetry()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx, span := telemetry.Tracer.Start(r.Context(), "roll")
 	defer span.End()
 
 	roll := 1 + rand.Intn(6)
@@ -44,14 +58,18 @@ func rolldice(w http.ResponseWriter, r *http.Request) {
 	var msg string
 	if player := r.PathValue("player"); player != "" {
 		msg = player + " is rolling the dice"
+		rollPlayerAttr := attribute.String("roll.player", player)
+		span.SetAttributes(rollPlayerAttr)
 	} else {
 		msg = "Anonymous player is rolling the dice"
+		rollPlayerAttr := attribute.String("roll.player", "Anonymous")
+		span.SetAttributes(rollPlayerAttr)
 	}
 	logger.InfoContext(ctx, msg, "result", roll)
 
 	rollValueAttr := attribute.Int("roll.value", roll)
 	span.SetAttributes(rollValueAttr)
-	rollCnt.Add(ctx, 1, metric.WithAttributes(rollValueAttr))
+	telemetry.RollCnt.Add(ctx, 1, metric.WithAttributes(rollValueAttr))
 
 	log.Printf("%s, result: %d", msg, roll)
 
