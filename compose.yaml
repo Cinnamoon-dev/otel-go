@@ -47,8 +47,10 @@ services:
     container_name: alloy
     command:
       - run
+      - --server.http.listen-addr=0.0.0.0:12345
       - /etc/alloy/config.alloy
     ports:
+      - "12345:12345"
       - "4318:4318"
       - "4317:4317"
     volumes:
