@@ -106,8 +106,19 @@ func newLoggerProvider(ctx context.Context) (*log.LoggerProvider, error) {
 		return nil, err
 	}
 
+	res, err := resource.New(
+		ctx,
+		resource.WithAttributes(
+			semconv.ServiceName(serviceName),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	loggerProvider := log.NewLoggerProvider(
 		log.WithProcessor(log.NewBatchProcessor(logExporter)),
+		log.WithResource(res),
 	)
 
 	return loggerProvider, nil
