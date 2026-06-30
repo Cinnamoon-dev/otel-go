@@ -4,8 +4,9 @@ otelcol.receiver.otlp "default" {
     grpc {}
 
     output {
-      traces = [otelcol.processor.batch.default.input]
-      logs = [otelcol.processor.batch.default.input]
+      traces  = [otelcol.processor.batch.default.input]
+      metrics = [otelcol.processor.batch.default.input]
+      logs    = [otelcol.processor.batch.default.input]
     }
 }
 // ---------------------------------------------------------------- //
@@ -14,8 +15,9 @@ otelcol.receiver.otlp "default" {
 // ---------------------------------------------------------------- //
 otelcol.processor.batch "default" {
   output {
-    traces = [otelcol.exporter.otlp.tempo.input]
-    logs = [otelcol.exporter.loki.default.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+    logs    = [otelcol.exporter.loki.default.input]
+    metrics = [otelcol.exporter.otlp.prometheus.input]
   }
 }
 // ---------------------------------------------------------------- //
@@ -32,6 +34,18 @@ otelcol.exporter.otlp "tempo" {
   }
 }
 // ---------------------------------------------------------------- //
+
+// Prometheus exporter (sends metrics to Prometheus OTLP receiver)
+// ---------------------------------------------------------------- //
+otelcol.exporter.otlp "prometheus" {
+  client {
+    endpoint = "prometheus:9090"
+
+    tls {
+      insecure = true
+    }
+  }
+}
 
 otelcol.exporter.loki "default" {
   forward_to = [
