@@ -1,8 +1,19 @@
 global:
   scrape_interval: 5s
 
+storage:
+  tsdb:
+    out_of_order_time_window: 30m
+
+otlp:
+  promote_resource_attributes:
+    - service.name
+    - service.namespace
+    - service.instance.id
+
 scrape_configs:
-  - job_name: alloy
+  - job_name: alloy-internal
+    metrics_path: /metrics
     static_configs:
       - targets:
           - alloy:12345
