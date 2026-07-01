@@ -16,8 +16,8 @@ otelcol.receiver.otlp "default" {
 otelcol.processor.batch "default" {
   output {
     traces  = [otelcol.exporter.otlp.tempo.input]
+    metrics = [otelcol.exporter.otlphttp.prometheus.input]
     logs    = [otelcol.exporter.loki.default.input]
-    metrics = [otelcol.exporter.otlp.prometheus.input]
   }
 }
 // ---------------------------------------------------------------- //
@@ -37,10 +37,10 @@ otelcol.exporter.otlp "tempo" {
 
 // Prometheus exporter (sends metrics to Prometheus OTLP receiver)
 // ---------------------------------------------------------------- //
-otelcol.exporter.otlp "prometheus" {
+otelcol.exporter.otlphttp "prometheus" {
   client {
-    endpoint = "prometheus:9090"
-
+    // O endpoint inteiro é /api/v1/otlp/v1/metrics mas o alloy faz o append do /v1/metrics
+    endpoint = "http://prometheus:9090/api/v1/otlp"
     tls {
       insecure = true
     }
