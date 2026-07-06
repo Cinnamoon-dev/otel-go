@@ -5,7 +5,9 @@ A simple **Go application** instrumented with **OpenTelemetry**, using **Grafana
 - 🔍 Tempo (Traces)
 - 📜 Loki (Logs)
 
-The purpose of this repository is to demonstrate different ways of exporting metrics to Prometheus while keeping the same application instrumentation.
+The purpose of this repository is to demonstrate a way of exporting traces, logs and metrics using OpenTelemetry while keeping the same application instrumentation.
+
+It is possible to backup all the observability data using an object storage in any cloud service.
 
 ---
 
@@ -67,7 +69,6 @@ The Go application runs directly on the host machine while the observability sta
 
 ```
 .
-├── app/                 # Go application
 ├── alloy/               # Grafana Alloy configuration
 ├── prometheus/          # Prometheus configuration
 ├── tempo/               # Tempo configuration
