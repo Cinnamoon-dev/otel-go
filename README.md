@@ -9,6 +9,35 @@ The purpose of this repository is to demonstrate different ways of exporting met
 
 ---
 
+# How to test the application
+
+```bash
+# Run the containers
+docker compose up -d --build
+
+# Run the Application
+go run .
+
+# Make requests to the API
+# You can make an anonymous roll
+curl localhost:8000/rolldice
+curl localhost:8000/rolldice/{player}
+
+# Go to the browser
+# Grafana dashboard
+# user: admin
+# password: admin
+localhost:3000
+
+# Explore in the left side
+# Choose the data sources after you make some requests
+# Logs -> Loki
+# Metrics -> Prometheus
+# Traces -> Tempo
+```
+
+--- 
+
 # Architecture
 
 The Go application runs directly on the host machine while the observability stack runs inside Docker containers.
